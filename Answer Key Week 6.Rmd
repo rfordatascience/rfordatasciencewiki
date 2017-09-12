@@ -1,0 +1,238 @@
+---
+title: "Solution Week 6"
+output:
+  html_notebook: default
+  html_document: default
+---
+
+```{r}
+library(tidyverse)
+library(nycflights13)
+```
+
+## 13.2.1
+
+### 1
+
+> Imagine you wanted to draw (approximately) the route each plane flies from its origin to its destination. What variables would you need? What tables would you need to combine?
+
+You would need the ```origin``` and ```dest``` airport for each flight in ```flights``` and connect those to the ```airports``` data frame to get the ```lat``` and ```lon``` variables that define the location of each airport on the world. The connection can be made by connecting ```origin``` or ```dest``` to the ```faa``` variable in ```airports```.
+
+### 2
+
+> I forgot to draw the relationship between weather and airports. What is the relationship and how should it appear in the diagram?
+
+```origin``` from ```weather``` connects to ```faa``` from ```airports```.
+
+### 3
+
+> weather only contains information for the origin (NYC) airports. If it contained weather records for all airports in the USA, what additional relation would it define with flights?
+
+There would be an additional relation between ```dest``` from ```flights``` to ```origin``` from ```weather```.
+
+
+## 13.4.6
+
+### 2
+
+> Add the location of the origin and destination (i.e. the lat and lon) to flights.
+
+My approach is to fist create a smaller ```airports_thin``` data frame where I dropped several variables that I don't want to include in the resulting data frame. I only want ```faa```, ```lat```, and ```lon```. I then use the new ```airports_thin``` data frame in a ```left_join``` on flights. We need to do this twice, once linking ```faa``` with ```origin``` and once with ```dest```. Because we will have duplicate variable names, my approach is to rename ```lon``` and ```lat``` after every join.
+
+```{r}
+
+airports_thin <- airports %>%
+  select(faa, lat, lon)
+
+flights %>%
+  left_join(airports_thin, by=c("origin" = "faa")) %>%
+  rename(origin_lat = lat, origin_lon = lon) %>%
+  left_join(airports_thin, by=c("dest" = "faa")) %>%
+  rename(dest_lat = lat, dest_lon = lon) 
+
+```
+
+### 3
+
+> Is there a relationship between the age of a plane and its delays?
+
+My approach was to get both the mean arrival delays and mean departure delays, but you could have just computed one of those. Because I computed both, I then gathered the two resulting average delays, one for arrival and one for departure, to make the data tidy again. This allows me to more easily use the computed averages in ggplot. But before I could use ggplot I needed to combine these data with the ```planes``` data frame to get each plane's age (```year```). By using ```left_join``` I made sure that all ```tailnum```s were represented that are also in ```planes```, but not those that are not in ```planes```. In the plot I decided to go for ```geom_hex``` to bin the data, dealing with the overplotting that I would get from ```geom_point```. Alternatively, I could have set an ```alpha```. I also facet by ```delay_type```, which makes the plot most readable to me. 
+
+To answer the question about whether there is a relation between plane age and delays: Not really. Actually, really old planes don't experience much delay. It's the newer ones that do. Possibly these are the ones from the high-traffic and low budget airlines.
+
+```{r}
+
+flights %>%
+  group_by(tailnum) %>%
+  summarize(
+    arrival = mean(arr_delay, na.rm=TRUE),
+    departure = mean(dep_delay, na.rm=TRUE)) %>%
+  gather(arrival, departure, key="delay_type", value="avg_delay") %>%
+  left_join(planes) %>%
+  ggplot(aes(year, avg_delay)) +
+    geom_hex() +
+    facet_wrap(~delay_type)
+
+```
+
+### 4
+
+> What weather conditions make it more likely to see a delay?
+
+I first gathered all weather indicators, and then right_joined it to flights, so that for every flight where the weather is known, we get a row for each weather indicator. This is efficient, because now I can easily facet by the various weather indicators. It turns out that much of the weather data cannot be retrieved for various flights, yielding NAs for some flights, which I remove prior to plotting.
+
+To answer the question: We see larger delays with very small and very large values of ```dewp```, ```wind_gust```, and ```wind_speed```. We also see large delays for high ```humid```, low ```pressure```, extremely high ```temp``` and extremely low ```visib```. Finally, as soon as there is any ```precip```, delays are more likely to be experienced.
+
+```{r}
+
+weather %>%
+  select(-wind_dir) %>%
+  gather(temp, dewp, humid, wind_speed, wind_gust, precip, pressure, visib, key='indicator', value='indicator_value') %>% 
+  right_join(flights) %>%
+  filter(!is.na(indicator)) %>%
+  ggplot(aes(indicator_value, arr_delay)) +
+     geom_smooth() +
+     facet_wrap(~indicator, scales='free')
+
+```
+
+## 14.2.5
+
+### 1
+> In code that doesn’t use stringr, you’ll often see paste() and paste0(). What’s the difference between the two functions? What stringr function are they equivalent to? How do the functions differ in their handling of NA?
+
+```paste``` combines multiple strings into one, separated by a character. ```paste0``` does the same, without that character. It's equivalent to ```str_c```. The difference in handling ```NA``` is illustrated below. With ```str_c```, ```NA```s are contagious. The ```paste0``` function converts ```NA```s to the string ```"NA"```.
+
+```{r}
+paste0('Hello, ', 'my name is: ', NA)
+str_c('Hello, ', 'my name is: ', NA)
+```
+
+## 14.3.1.1
+
+### 2
+
+> How would you match the sequence ```"'\```?
+
+```{r}
+
+x <- "\"'\\"
+writeLines(x)
+str_view(x, "\"'\\\\")
+
+```
+
+## 14.3.2.1
+
+### 2
+
+> Given the corpus of common words in stringr::words, create regular expressions that find all words that:
+
+> Start with “y”.
+> End with “x”
+> Are exactly three letters long. (Don’t cheat by using str_length()!)
+> Have seven letters or more.
+> Since this list is long, you might want to use the match argument to str_view() to show only the matching or non-matching words.
+
+```{r}
+
+str_view(words, '^y', match=TRUE)
+str_view(words, 'x$', match=TRUE)
+str_view(words, '^...$', match=TRUE)
+str_view(words, '^.......', match=TRUE)
+
+```
+
+## 14.3.3.1
+
+### 1
+
+> Create regular expressions to find all words that:
+
+> - Start with a vowel.
+> - End with ed, but not with eed.
+> - End with ing or ise.
+
+I am using ```sample``` to take a random sample from the list of words for readability for some of the commands. 
+
+```{r}
+sample_words <- sample(words, 10)
+
+str_view(sample_words, "^[aeuioy]")
+str_view(words, "[^e]ed$", match=TRUE)
+str_view(words, "(ing|ise)$", match=TRUE)
+
+```
+
+## 14.3.4.1
+
+### 1
+
+> Describe the equivalents of ?, +, * in {m,n} form.
+
+Respectively: ```{0,1}```, ```{1,}```, ```{0,}```.
+
+### 2
+> Describe in words what these regular expressions match: (read carefully to see if I’m using a regular expression or a string that defines a regular expression.)
+
+> - ```^.*$```
+> - ```"\\{.+\\}"```
+> - ```\d{4}-\d{2}-\d{2}```
+> - ```"\\\\{4}"```
+
+Respectively:
+
+- Any character repeated any number of times, including an empty string.
+- Any sequence within a string that starts with \{, then any number of characters (at least one), and then a \}. This may appear anywhere in the string.
+- Four digits, a dash, then 2 digits, then a dash, then another two digits. This would be a date, starting with year, then month, then day.
+- It matches with precisely four backslashes in a sequence.
+
+### 3
+
+> Create regular expressions to find all words that:
+
+> - Start with three consonants.
+> - Have three or more vowels in a row.
+> - Have two or more vowel-consonant pairs in a row.
+
+```{r}
+str_view(words, "^[^aeiuoy]{3}", match=TRUE)
+str_view(words, "[aeiuoy]{3,}", match=TRUE)
+str_view(sample_words, "([aeiuoy][^aeiuoy]){2,}")
+
+```
+
+## 14.3.5.1
+
+### 1
+
+> Describe, in words, what these expressions will match:
+
+> - ```(.)\1\1```
+> - ```"(.)(.)\\2\\1"```
+> - ```(..)\1```
+> - ```"(.).\\1.\\1"```
+> - ```"(.)(.)(.).*\\3\\2\\1"```
+
+Respectively:
+
+- Any character that is repeated twice immediately after its first occurence.
+- Four character palindrome: Any sequence of characters that starts with two characters, which are then immediately repeated in the reverse order, like: ```ABBA````, but also ```noon``` in ```afternoon```.
+- Any sequence of two characters that is immediately repeated
+- Any character that is repeated twice, with any character in between every repetition, like the a in ```abaca```.
+- A sequence of any three chracters that is repeated in reverse order, with any number of any characters in the interval beween the original occurrence and the reverse repetition. This includes an interval of 0 characters, where the reverse sequence immediately follows the original occurrence. 
+
+### 2
+
+> Construct regular expressions to match words that:
+
+> - Start and end with the same character.
+> - Contain a repeated pair of letters (e.g. “church” contains “ch” repeated twice.)
+> - Contain one letter repeated in at least three places (e.g. “eleven” contains three “e”s.)
+
+```{r}
+str_view(words, "^(.).*\\1$", match=TRUE)
+str_view(words, "^.*(..).*\\1.*$", match=TRUE)
+str_view(words, "^.*(.).*\\1.*\\1.*$", match=TRUE)
+```
+
