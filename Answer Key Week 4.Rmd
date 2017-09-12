@@ -1,0 +1,281 @@
+---
+title: "Solution Week 4"
+output:
+  html_notebook: default
+  html_document: default
+---
+
+```{r}
+library(tidyverse)
+library(nycflights13)
+```
+
+## 5.5.2
+
+### 5.5.2.1
+
+> Currently dep_time and sched_dep_time are convenient to look at, but hard to compute with because they’re not really continuous numbers. Convert them to a more convenient representation of number of minutes since midnight.
+
+```{r}
+
+# Create data frame with only the needed variables to be able to see the results of the mutation command
+flights_thin <- select(flights, dep_time, sched_dep_time)
+
+# Actual answer to the question, making use of integer division and remainder to compute minutes after midnight
+mutate(flights_thin, 
+       dep_time_min = 60 * (dep_time %/% 100) + (dep_time %% 100),
+       sched_dep_time_min = 60 * (sched_dep_time %/% 100) + (sched_dep_time %% 100))
+
+```
+
+### 5.5.2.2
+
+> Compare air_time with arr_time - dep_time. What do you expect to see? What do you see? What do you need to do to fix it?
+
+I computed ```trip_time``` (```arr_time - dep_time```), which should correlate and ideally be similar to ```air_time```. But it's not. The most important reason is that the arrival and departure times are time zone specific. So you would need to correct for the time zone of the destination and the origin. On top of that, a plane needs to taxi before it is in the air, although leaving the gate already means departure
+
+```{r}
+flights_thin <- select(flights, air_time, arr_time, dep_time) %>%
+  mutate(dep_time_min = 60 * (dep_time %/% 100) + (dep_time %% 100),
+         arr_time_min = 60 * (arr_time %/% 100) + (arr_time %% 100))
+
+mutate(flights_thin, trip_time = arr_time_min - dep_time_min) %>%
+  select(air_time, trip_time)
+```
+
+### 5.5.2.3
+
+> Compare dep_time, sched_dep_time, and dep_delay. How would you expect those three numbers to be related?
+
+I would expect departure delay to be the difference between scheduled departure time and actual departure time. To check that, we have to compute that difference. But if you do that directly on the raw data, the differences are incorrect, because the numbers represent times, not minutes after midnight. As you can see below:
+
+```{r}
+flights_thin <- select(flights, dep_time, sched_dep_time, dep_delay)
+(incorrect <- mutate(flights_thin, diff_dep_time = dep_time - sched_dep_time))
+```
+So we need that conversion before we compute the difference. As you can see, the end result is completely the same. 
+```{r}
+mutate(flights_thin, 
+       dep_time = 60 * (dep_time %/% 100) + (dep_time %% 100),
+       sched_dep_time = 60 * (sched_dep_time %/% 100) + (sched_dep_time %% 100),
+       diff_dep_time =  dep_time - sched_dep_time)
+
+```
+
+### 5.5.2.4
+> Find the 10 most delayed flights using a ranking function. How do you want to handle ties? Carefully read the documentation for min_rank(). 
+
+```{r}
+
+flights_thin <- select(flights, carrier, flight, arr_delay) 
+flights_thin <- mutate(flights_thin, delay_rank=min_rank(desc(arr_delay)))
+flights_thin <- filter(flights_thin, delay_rank <= 10)
+arrange(flights_thin, delay_rank)
+```
+
+### 5.5.2.5
+
+> What does 1:3 + 1:10 return? Why?
+
+It returns a warning. That's because each returns a sequence as vector, the first one with three values, and the second with ten values, and you can't just add two vectors of unequal length. If you want to combine the two vectors, you could do it as follows:
+
+```{r}
+c(1:3, 1:10)
+```
+
+What does happen though is that every element from the first vector 1:3 is added to the first three elements of 1:10, and then for the fourth element of the second vector, the first element of 1:3 is used again, and so it reiterates until all values of 1:10 have something added to.
+
+## 5.6.7
+
+### 5.6.7.2
+> Come up with another approach that will give you the same output as not_cancelled %>% count(dest) and not_cancelled %>% count(tailnum, wt = distance) (without using count()).
+
+```{r}
+not_cancelled <- flights %>% 
+  filter(!is.na(dep_delay), !is.na(arr_delay))
+
+# not_cancelled %>% count(dest)
+not_cancelled %>% 
+  group_by(dest) %>%
+  summarize(n=n())
+
+#not_cancelled %>% count(tailnum, wt = distance) 
+not_cancelled %>% 
+  group_by(tailnum) %>%
+  summarize(n=sum(distance))
+```
+
+### 5.6.7.3
+
+> Our definition of cancelled flights (is.na(dep_delay) | is.na(arr_delay) ) is slightly suboptimal. Why? Which is the most important column?
+
+It's overkill. If a flight arrives, it also departed, so we can just use ```!is.na(dep_delay)```.
+
+### 5.6.7.4
+
+> Look at the number of cancelled flights per day. Is there a pattern? Is the proportion of cancelled flights related to the average delay?
+
+Yes, the longer the average delays, the more cancellations.
+
+```{r}
+
+flights %>% 
+  group_by(year, month, day) %>%
+  summarize(
+    prop_cancelled = mean(is.na(dep_delay)), 
+    avg_delay = mean(dep_delay, na.rm=TRUE)) %>%
+  ggplot(aes(avg_delay, prop_cancelled)) +
+    geom_point() +
+    geom_smooth()
+
+```
+
+### 5.6.7.5
+
+> Which carrier has the worst delays? Challenge: can you disentangle the effects of bad airports vs. bad carriers? Why/why not? (Hint: think about flights %>% group_by(carrier, dest) %>% summarise(n()))
+
+It is not possible to disentangle the effects of bad airport destinations from bad airlines, because there are so many destinations. It is easier for origin airports though; see the barplot below. there are airlines that have delays when they depart from any airport, and there are airlines that have barely any delay. For example AA, UA, and US perform really well. EV, MQ and B6 perform badly regardless of which of the three airports they depart from. Also, delays seem to be most often experienced when departing from LGA.
+
+```{r}
+avg_delays <- flights %>%
+  group_by(carrier, origin) %>%
+  summarise(avg_delay = mean(arr_delay, na.rm = TRUE))
+
+ggplot(avg_delays, aes(carrier, avg_delay)) +
+  geom_bar(stat="identity", aes(fill=origin))
+
+
+```
+
+### 5.6.7.6
+
+> For each plane, count the number of flights before the first delay of greater than 1 hour.
+
+The approach I used here entails computing a logical variable ```long_delay``` that is true when the delay is greater than 60, and false otherwise. I then use a rolling function, ```cumany```, grouped by ```tailnum```, to compute ```experienced_past_log_delay``` which holds the value false as long as no long delay has been experienced by that plane and switches to true as soon as it did. 
+
+Before you can do this, you have to remove the missing values of canceled flights to make sure there are no missing values in the end result. Additionally, the data frame needs to be sorted by date and time within tailnumber for this to work. The ```time_hour``` variable encodes both in one.
+
+```{r}
+
+flights %>%
+  filter(!is.na(arr_delay)) %>%
+  select(tailnum, time_hour, arr_delay) %>%
+  arrange(tailnum, time_hour) %>%
+  group_by(tailnum) %>%
+  mutate(
+    long_delay = arr_delay > 60,
+    experienced_past_long_delay = cumany(long_delay)
+  ) %>%
+  summarize(flights_before_long_delay = sum(!experienced_past_long_delay) )
+  
+```
+
+## 7.3.4
+
+### 7.3.4.2
+
+> Explore the distribution of price. Do you discover anything unusual or surprising? (Hint: Carefully think about the binwidth and make sure you try a wide range of values.)
+
+There seems to be a weird gap around 1000$.
+```{r}
+
+ggplot(diamonds, aes(price)) + geom_histogram()
+ggplot(diamonds, aes(price)) + geom_histogram(bins=200)
+
+```
+### 7.3.4.3
+
+> How many diamonds are 0.99 carat? How many are 1 carat? What do you think is the cause of the difference?
+
+There are only few 0.99 carat, and lots of 1.00 carat. Looking at the histogram, it seems that 1.0 carat is higher than it should be. Possibly, people like to round up to make the diamonds seem more expensive.
+
+```{r}
+
+diamonds %>%
+  filter(carat == 0.99 | carat == 1) %>%
+  group_by(carat) %>%
+  summarize(n())
+
+ggplot(diamonds, aes(carat)) + geom_histogram()
+
+```
+
+### 7.3.4.4
+
+> Compare and contrast coord_cartesian() vs xlim() or ylim() when zooming in on a histogram. What happens if you leave binwidth unset? What happens if you try and zoom so only half a bar shows?
+
+With ```xlim```, the data points outside of the limits are thrown out, the 30 bins are then created within only the included data. This doesn't happen with ```coord_cartesian```, so you truly zoom in, but without the additional granularity. This can be adjusted by making the bins smaller with the ```binwidth``` argument. 
+
+```{r}
+
+ggplot(diamonds, aes(carat)) + geom_histogram()
+
+ggplot(diamonds, aes(carat)) + geom_histogram() + xlim(1, 2)
+ggplot(diamonds, aes(carat)) + geom_histogram() + coord_cartesian(xlim=c(1,2))
+ggplot(diamonds, aes(carat)) + geom_histogram(binwidth=0.025) + coord_cartesian(xlim=c(1,2))
+```
+
+## 7.5.1.1
+
+### 7.5.1.1.5
+
+> Compare and contrast geom_violin() with a facetted geom_histogram(), or a coloured geom_freqpoly(). What are the pros and cons of each method?
+
+They all provide the same information; histogram suffers from the necessity of binning, whereas violin and freqpoly do not. The mass is unclear for violin though, whereas freqpoly and histogram represent counts. The distribution shapes are more easily compared in the violin plot, but the freqpoly and the histogram more clearly shows differences in total quantity (some reach higher frequencies than others). Last, the freqpoly is harder to read than the violin plot.
+
+
+```{r}
+
+ggplot(diamonds, aes(cut, price)) +
+  geom_violin()
+
+ggplot(diamonds, aes(price)) +
+  geom_histogram() +
+  facet_wrap(~ cut)
+
+ggplot(diamonds, aes(price)) +
+  geom_freqpoly(aes(color=cut)) 
+
+```
+
+
+## 7.5.2.1
+
+### 7.5.2.1.2
+
+> Use geom_tile() together with dplyr to explore how average flight delays vary by destination and month of year. What makes the plot difficult to read? How could you improve it?
+
+The plot is hard to read because of the many destinations, which are unordered. This can be improved using the ```seriation``` package. 
+
+```{r fig.height=10, fig.width=6}
+
+delays <- flights %>%
+  group_by(dest, month) %>%
+  summarize(delay=mean(arr_delay, na.rm=TRUE))
+
+ggplot(delays, aes(month, dest)) +
+    geom_tile(aes(fill=delay))
+
+```
+
+## 7.5.3
+
+### 7.5.3.2
+
+> Visualise the distribution of carat, partitioned by price.
+
+```{r} 
+ggplot(diamonds, aes(price, carat)) + 
+  geom_boxplot(aes(group=cut_width(price, 1000)))
+```
+
+### 7.5.3.4
+
+> Combine two of the techniques you’ve learned to visualise the combined distribution of cut, carat, and price.
+
+```{r} 
+ggplot(diamonds, aes(price, carat)) + 
+  geom_boxplot(aes(group=cut_width(price, 1000))) +
+  facet_wrap(~cut)
+```
+

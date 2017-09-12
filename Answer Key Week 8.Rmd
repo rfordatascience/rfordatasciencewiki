@@ -1,0 +1,244 @@
+---
+title: "Solution to Exercises Week 8"
+output: html_notebook
+---
+```{r}
+library(tidyverse)
+library(jmv)     # For using Jamovi code
+library(qwraps2) # For formatting p-values
+library(broom)   # For getting at test results
+library(lsr)     # For computing effect sizes
+library(lm.beta) # For computing standardized regression weights
+```
+
+## 1
+
+> Perform a paired samples t-test on city and highway mileage (from the mpg data frame) twice: one time using the jmv package, and one time using R’s default t.test function. 
+
+See below.
+
+## 1.1
+
+> Report the results of each approach in an RMarkdown sentence without hard-coding the numbers (so the numbers should be filled in by R when you render or preview the RMarkdown document). Include the descriptives (means and sd’s) of city and highway mileage in the report and the effect size for the t-test. Don’t worry if the end result of the two approaches is the same.
+
+### Jamovi approach 
+```{r}
+### Run test ###
+jmv_results <- jmv::ttestPS(
+    data=mpg,
+    pairs=list(
+        list(
+            i1="cty",
+            i2="hwy")),
+    meanDiff=TRUE,
+    effectSize=TRUE,
+    ci=TRUE,
+    desc=TRUE)
+
+### Extract results ###
+jmvttest <- as_tibble(jmv_results$ttest)
+
+tstat <- round(jmvttest$`stat[stud]`, 2)
+df    <- jmvttest$`df[stud]`
+pval  <- frmtp(jmvttest$`p[stud]`, markup="markdown", digits=3, case="lower")
+d     <- round(jmvttest$`es[stud]`, 2)
+
+### Extract descriptives ###
+jmvdesc <- jmv_results$desc %>%
+  as_tibble() %>%
+  mutate_if(is.numeric, round, digits=2) # round everything that's numeric
+
+ctydesc <- jmvdesc %>% filter(name=='cty')
+hwydesc <- jmvdesc %>% filter(name=='hwy')
+
+```
+
+A paired t-test showed that highway mileage (*M* = `r hwydesc$m`, *SD* = `r hwydesc$sd`) is higher than city mileage (*M* = `r ctydesc$m`, *SD* = `r ctydesc$sd`), *t*(`r df`) = `r tstat`, `r pval`, *d* = `r d`.
+
+### Vanilla R approach
+
+```{r}
+
+### Test ###
+rttest <- t.test(mpg$cty, mpg$hwy, paired=TRUE)
+cohend <- cohensD(mpg$cty, mpg$hwy, method='paired')
+
+### Extract results ###
+rttest <- tidy(rttest)
+tstat <- round(rttest$statistic, 2)
+df    <- rttest$parameter
+pval  <- frmtp(rttest$p.value, markup="markdown", digits=3, case="lower")
+d     <- round(cohend, 2)
+
+### Descriptives ###
+rdesc <- mpg %>%
+  summarize(
+    cty_m = mean(cty), cty_sd = sd(cty), 
+    hwy_m = mean(hwy), hwy_sd = sd(hwy)) %>%
+  mutate_if(is.numeric, round, digits=2)
+```
+
+A paired t-test showed that highway mileage (*M* = `r rdesc$hwy_m`, *SD* = `r rdesc$hwy_sd`) is higher than city mileage (*M* = `r rdesc$cty_m`, *SD* = `r rdesc$cty_sd`), *t*(`r df`) = `r tstat`, `r pval`, *d* = `r d`.
+
+## 1.2
+
+> Discuss the pro’s and cons of each approach
+
+I find it more comfortable to directly write the code in R, never leaving it. Also, the t-test syntax is more readable in R. However, the differences are not so big at this point.
+
+## 2.1
+
+> Perform a paired samples t-test on city and highway mileage (from the mpg data frame) for each class using one single pipe (hint: make use of tidy() and do()). Can you do the same thing with the jamovi approach efficiently? If the answer is no, discuss at least two reasons.
+
+```{r}
+results <- mpg %>%
+  group_by(class) %>%
+  do(tidy(t.test(.$hwy, .$cty, paired=TRUE)))
+
+results
+```
+
+## 2.2 & 2.3
+
+> Use the resulting tibble from the analysis in the previous question to create a bar graph displaying the estimated difference for each class (use the estimate column). Don’t forget
+to add labels.
+
+> Add confidence intervals (using the conf.low and conf.high columns) as error bars to the
+bar graph (read the help on geom_errorbar for more information). 
+
+
+```{r}
+results %>%
+  ggplot(aes(class, estimate)) +
+    geom_bar(stat="identity") +
+    geom_errorbar(aes(ymin=conf.low, ymax=conf.high), width=.2) +
+    labs(
+      title = "Difference in mileage in cities and on highways for each car class",
+      caption = "Error bars represent 95% confidence intervals",
+      x = "Car class",
+      y = "Difference in mileage") +
+    theme_minimal()
+
+```
+
+## 2.4
+
+> Create an additional column in the tibble with Bonferroni corrected p values of the t-tests (i.e., multiply every p value with the total number of t-tests computed). Don’t forget to first cancel the grouping using ungroup() before mutating the new column if you plan to use n() as multiplier.
+
+
+```{r}
+results %>%
+  ungroup() %>%
+  mutate(corrected_p.value = p.value * n())
+```
+
+## 3.1
+
+> Using the weather data set from the nycflights13 package, compare the average wind speed at JFK and Newark (EWR) airports with an independent samples t-test.
+
+```{r}
+library(nycflights13)
+
+weather %>%
+  filter(origin %in% c('JFK', 'EWR')) %>% 
+  t.test(wind_speed ~ origin, .)
+
+```
+
+## 3.2
+
+> Perform a linear regression to see which weather indicators (without interactions) from the weather dataset predict departure delay in the flights dataset. Output a summary with
+standardised betas. What can you conclude? What are the three strongest predictors? How much variance is explained?
+
+```{r}
+library(car)
+fit <- weather %>%
+  inner_join(flights) %>%
+  lm(dep_delay ~ temp+dewp+humid+wind_speed+precip+pressure+visib, .) %>%
+  lm.beta()
+
+summary(fit)
+```
+
+We can conclude that all weather indicators predict departure delays. The explained variance can be seen from the Adjusted R-squared, which is about 1.5%, basically not much. There are probably weather unrelated predictors that are more important. The three strongest predictors are temperature, dewpoint and visiblity.
+
+## 3.3
+
+> Do the same analysis with a model that includes only the three strongest predictors from the previous analysis (look at the standardised betas), center them, and compute all interactions. Output an Type III Anova table. Are there a significant interactions? Which one? 
+
+```{r}
+library(car)
+fit <- weather %>%
+  inner_join(flights) %>%
+  mutate(
+    temp = temp - mean(temp), 
+    dewp = dewp - mean(dewp),
+    visib = visib - mean(visib)) %>%
+  lm(dep_delay ~ temp*dewp*visib, .) %>%
+  Anova(type=3) 
+
+fit
+```
+
+There is one interaction between temperature and visibility and one between temperatuere and dewpoint.
+
+## 3.4
+
+> There should be one significant interaction in the previous analysis. Create one or more plot(s) to explore the interaction and describe what can be concluded. 
+
+From the plots below you can see that the lower the visibility score, the more temperature affects departure delays and that the higher the temperarture, the more visibility affects departure delays.
+
+```{r}
+forplot <- weather %>%
+  inner_join(flights) %>%
+  mutate(
+    temp_group=factor(ntile(temp, 5)),
+    visib_group=factor(ntile(visib, 5)))
+  
+
+ggplot(forplot, aes(visib, dep_delay)) +
+  geom_smooth(aes(color=temp_group), se=F)
+  scale_color_brewer() +
+  theme_dark()
+
+ggplot(forplot, aes(temp, dep_delay)) +
+  geom_smooth(aes(color=visib_group), se=F) +
+  scale_color_brewer() +
+  theme_dark()
+```
+
+## 3.5
+
+> Perform an anova on arrival delays from the flights dataset with origin and destination as independent variables (without their interaction, this is not possible because the data are
+unbalanced) using the R-only approach and try the Jamovi approach.
+
+Just stick to R, loading the flights dataset in Jamovi took ages.
+
+> Which of the two variables has the strongest effect on arrival delay?
+
+From the effect sizes (eta squared) below, you can see that the effect of destination is much larger than the one from origin, despite the F values' magnitudes being the opposite (the reason is that the degrees of freedom are widely different -- there are many more destinations than origins).
+
+```{r}
+lm(arr_delay ~ origin + dest, flights) %>%
+  Anova(type=3)
+
+aov(arr_delay ~ origin + dest, flights) %>%
+  etaSquared(type=3)
+```
+
+## 3.6
+
+> Let’s zoom in on the effect of origin on arrival delay in a regression. Use treatment contrast coding for the origin variable and describe the results based on the regression weights in RMarkdown, reporting the estimates and the p-values with in-line R code.
+
+```{r}
+flights_mutated <- flights %>%
+  mutate(origin_f = factor(origin)) 
+
+(contrasts(flights_mutated$origin_f) <- contr.treatment(levels(flights_mutated$origin_f)))
+
+(lm(arr_delay ~ origin, flights_mutated) %>%
+  summary() %>%
+  tidy() -> results)
+```
+
+At Newark, the flight delays average `r round(results$estimate[1], 2)`. They are worse at JFK, where they are `r round(results$estimate[2], 2)` longer (`r frmtp(results$p.value[2], digits=3, markup='markdown', case='lower')`), but better at La Guardia, where they are `r round(results$estimate[3], 2)` shorter (`r frmtp(results$p.value[3], digits=3, markup='markdown', case='lower')`).

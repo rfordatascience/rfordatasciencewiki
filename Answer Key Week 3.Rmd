@@ -1,0 +1,130 @@
+---
+title: "Solution Week 3"
+output:
+  html_document: default
+  html_notebook: default
+---
+
+## 4.4.1
+
+### 4.4.1.1
+
+The code doesn't work because the second command to inspect the value of ```my_variable``` has misspelled the object name. The i has the wrong character.
+
+### 4.4.1.2
+
+Changed ```dota``` to ```data```, changed ```cyl = 8``` to ```cyl == 8``` and changed ```diamond``` to ```diamonds```.
+
+```{r}
+library(tidyverse)
+
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy))
+
+filter(mpg, cyl == 8)
+filter(diamonds, carat > 3)
+```
+
+### 4.4.1.3
+
+You get a handy keyboard shortcuts overview. Awesome!
+
+## 5.2.4
+
+### 5.2.4.1
+
+```{r}
+library(nycflights13)
+
+filter(flights, arr_delay >= 120)
+filter(flights, dest %in% c("IAH", "HOU"))
+filter(flights, carrier %in% c("UA", "AA", "DL"))
+filter(flights, month >= 7 & month <= 9)
+filter(flights, dep_delay == 0 & arr_delay > 120)
+filter(flights, dep_delay >= 60 & dep_delay - arr_delay > 30)
+filter(flights, dep_time <= 600)
+```
+
+### 5.2.4.2
+
+See ```?between```. Yes, you can simplify some of the previous commands:
+
+```{r}
+library(nycflights13)
+
+filter(flights, between(month, 7, 9))
+
+```
+
+### 5.2.4.3
+
+8255 rows are missing departing times. Given that these flights also have mssing arrival times, these flights probably never took off.
+
+```{r}
+filter(flights, is.na(dep_time))
+```
+
+### 5.2.4.4
+
+```NA^0``` is not missing because any number with ```0``` as exponent has the answer 1, regardless of wht number the ```NA``` would have taken. The same goes for ```NA | TRUE```: this expression is always true, regardless of what value ```NA``` would have taken (because only one of the two parts of expression needs to be true). This is also the case for ```NA & FALSE```: this expression can only be true if both parts are true. Given that the second part is always false, it doesn't matter what value ```NA``` would have taken.
+
+## 5.3.1
+
+### 5.3.1.1
+
+```{r}
+arrange(flights, desc(is.na(dep_time)))
+```
+
+### 5.3.1.2
+
+```{r}
+arrange(flights, desc(arr_delay))
+```
+
+### 5.3.1.3
+```{r}
+arrange(flights, desc(distance / air_time))
+```
+
+### 5.3.1.4
+
+```{r}
+arrange(flights, desc(air_time)) # Longest
+arrange(flights, air_time)       # Shortest
+```
+
+## 5.4.1
+
+### 5.4.1.1
+
+Some not so far-fetched options:
+```{r}
+selection <- select(flights, dep_time, dep_delay, arr_time, arr_delay)
+selection <- select(flights, c(4, 6, 7, 9))
+selection <- select(flights, c(starts_with('arr'), starts_with('dep')))
+```
+
+### 5.4.1.2
+
+It gets ignored the second time.
+
+```{r}
+select(flights, dep_time, dep_delay, dep_time)
+```
+
+### 5.4.1.3
+
+It selects all variables if they are mentioned in a list. The primary use case for this is when you have a list of variables that you need, if they exist. Selecting them directly using ```select(flights, year, month, day, dep_delay, arr_delay)``` will throw an error if one of those variables is not present, but the ```one_of``` version will run just fine, ignoring any variable in the list that is not also present in the data frame.
+
+```{r}
+select(flights, one_of(c("year", "month", "day", "dep_delay", "arr_delay")))
+```
+
+### 5.4.1.4
+
+It does surprise me, because R is usually very picky about capitalization. Apparently ```contains``` is not case sensitive. Change this behavior with ```contains("TIME", ignore.case = FALSE)```.
+
+```{r}
+select(flights, contains("TIME"))
+```
