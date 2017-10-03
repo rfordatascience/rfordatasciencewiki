@@ -55,10 +55,8 @@ ggplot(data = mpg) +
 Because ```color = "blue"``` is inside the ```aes()``` clause, instead of outside of it. Because of that, R is trying to map some variable that doesn't exist from the data frame on the color aesthetic. This is the correct syntax for setting an aesthetic attribute to a fixed value:
 
 ```{r}
-
 ggplot(data = mpg) + 
   geom_point(mapping = aes(x = displ, y = hwy), color = "blue")
-
 ```
 
 ### 3.3.1.2
