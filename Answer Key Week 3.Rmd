@@ -9,7 +9,7 @@ output:
 
 ### 4.4.1.1
 
-The code doesn't work because the second command to inspect the value of ```my_variable``` has misspelled the object name. The i has the wrong character.
+The code doesn't work because the second command to inspect the value of ```my_variable``` has misspelled the object name. The i in the example is the dotless i character. (This may not cause an error in certain environments [GitHub issue](https://github.com/hadley/r4ds/issues/605))
 
 ### 4.4.1.2
 
@@ -53,7 +53,6 @@ See ```?between```. Yes, you can simplify some of the previous commands:
 library(nycflights13)
 
 filter(flights, between(month, 7, 9))
-
 ```
 
 ### 5.2.4.3

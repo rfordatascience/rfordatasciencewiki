@@ -29,11 +29,11 @@ ggplot(data = mpg) +
 
 ### 3.5.1.3
 
-They make faceted plots, but only with a single column in the case of ```drv ~ .``` and a single row in the case of ```. ~ cyl```. The dot tells R that there is not facetting variable on that side of the formula.
+They make faceted plots, but only with a single column in the case of ```drv ~ .``` and a single row in the case of ```. ~ cyl```. The dot tells R that there is not faceting variable on that side of the formula.
 
 ### 3.5.1.4
 
-It's easier to identify the clusters in the facets. The disadvantage is that it is hard to see the overall effect of engine size (```displ```) on mileage (```hwy```). When you have a really large data set with overlapping clusters, it will be hard to see the individual clusters. That would be a reason to use facetting.
+It's easier to identify the clusters in the facets. The disadvantage is that it is hard to see the overall effect of engine size (```displ```) on mileage (```hwy```). When you have a really large data set with overlapping clusters, it will be hard to see the individual clusters. That would be a reason to use faceting.
 
 ### 3.5.1.5
 
@@ -76,35 +76,34 @@ No, they will be the same. In one, the data set and mapping is defined locally f
 ```{r}
 ggplot(mpg, aes(displ, hwy)) +
   geom_point() +
-  geom_smooth(se=F) 
+  geom_smooth(se = F) 
 
 ggplot(mpg, aes(displ, hwy)) +
   geom_point() +
-  geom_smooth(aes(group = drv), se=F) 
+  geom_smooth(aes(group = drv), se = F) 
 
-ggplot(mpg, aes(displ, hwy, color=drv)) +
+ggplot(mpg, aes(displ, hwy, color = drv)) +
   geom_point() +
-  geom_smooth(se=F) 
+  geom_smooth(se = F) 
 
 ggplot(mpg, aes(displ, hwy)) +
   geom_point(aes(color = drv)) +
-  geom_smooth(se=F) 
+  geom_smooth(se = F) 
 
 ggplot(mpg, aes(displ, hwy)) +
   geom_point(aes(color = drv)) +
-  geom_smooth(aes(linetype = drv), se=F) 
+  geom_smooth(aes(linetype = drv), se = F) 
 
 ggplot(mpg, aes(displ, hwy)) +
-  geom_point(color='white', size=2, shape=21, stroke=1, aes(fill=drv))
+  geom_point(color = 'white', size = 2, shape = 21, stroke = 1, aes(fill = drv))
 ```
 
 OR, alternatively, using two layers of points:
 
 ```{r}
-
 ggplot(mpg, aes(displ, hwy)) +
-  geom_point(color='white', size=5) +
-  geom_point(aes(color=drv), size=3)
+  geom_point(color = 'white', size = 5) +
+  geom_point(aes(color = drv), size = 3)
 ```
 
 ### 3.8.1.1
@@ -121,7 +120,7 @@ ggplot(data = mpg, mapping = aes(x = cty, y = hwy)) +
 ```width``` and ```height``` (check with ```?geom_jitter```)
 
 ### 3.8.1.3
-```geom_count``` plots a larger point if there are more points at the same location, maintaining the actual values the point should take on both axes, while geom_jitter places the points on nearby random locations so they are all visible.
+```geom_count``` plots a larger point if there are more points at the same location, maintaining the actual values the point should take on both axes, while ```geom_jitter``` places the points on nearby random locations so they are all visible.
 
 ```{r}
 ggplot(data = mpg, mapping = aes(x = cty, y = hwy)) + 

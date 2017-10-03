@@ -18,16 +18,16 @@ library(tidyverse)
 
 
 ```{r}
-read_delim('a|b|c\n1|2|3', delim='|')
+read_delim('a|b|c\n1|2|3', delim = '|')
 ```
 
 
 ### 4
 
-> Sometimes strings in a CSV file contain commas. To prevent them from causing problems they need to be surrounded by a quoting character, like " or '. By convention, read_csv() assumes that the quoting character will be ", and if you want to change it you’ll need to use read_delim() instead. What arguments do you need to specify to read the following text into a data frame?
+> Sometimes strings in a CSV file contain commas. To prevent them from causing problems they need to be surrounded by a quoting character, like " or '. By convention, ```read_csv()``` assumes that the quoting character will be ", and if you want to change it you’ll need to use ```read_delim()``` instead. What arguments do you need to specify to read the following text into a data frame?
 
 ```{r}
-read_delim("x,y\n1,'a,b'", delim=",", quote = "'" )
+read_delim("x,y\n1,'a,b'", delim = ",", quote = "'" )
 ```
 
 ### 5
@@ -54,13 +54,13 @@ read_csv("a;b\n1;3")
 
 ### 1
 
-> Why are gather() and spread() not perfectly symmetrical?
+> Why are ```gather()``` and ```spread()``` not perfectly symmetrical?
 
 Spread turns numbers into strings (text/chr) when they become variable names. When you then gather these columns again, ```gather``` does not automatically change those names back to numbers. 
 
-> Both spread() and gather() have a convert argument. What does it do?
+> Both ```spread()``` and ```gather()``` have a convert argument. What does it do?
 
-Setting ```convert=TRUE``` will solve the problem above: the years will automatically be converted back tl numbers with ```gather```.
+Setting ```convert = TRUE``` will solve the problem above: the years will automatically be converted back to numbers with ```gather```.
 
 ### 2
 
@@ -79,7 +79,7 @@ There are two ages for the same person. Adding a new column that differentiates 
 
 > Tidy the simple tibble below. Do you need to spread or gather it? What are the variables?
 
-You need to gather it. The variables are pregnant, sex, and n.
+You need to gather it. The variables are ```pregnant```, ```sex```, and ```n```.
 
 ```{r}
 preg <- tribble(
@@ -89,41 +89,40 @@ preg <- tribble(
 )
 
 preg %>% 
-  gather(male, female, key=sex, value=n)
+  gather(male, female, key = sex, value = n)
 ```
 
 ## 12.4.3
 
 ### 1
 
-> What do the extra and fill arguments do in separate()? Experiment with the various options for the following two toy datasets.
+> What do the extra and fill arguments do in ```separate()```? Experiment with the various options for the following two toy datasets.
 
-Control what happens when there are too many or too few pieces to separate. By default both give warnnings. Alternatively, extra levels can be dropped or merged. Too few levels can be filled by adding NA to the right or the left of the levels that are present. When you specify these, you don't get warnings. Which is nice.
+Control what happens when there are too many or too few pieces to separate. By default both give warnings. Alternatively, extra levels can be dropped or merged. Too few levels can be filled by adding NA to the right or the left of the levels that are present. When you specify these, you don't get warnings, which is nice.
 
 ```{r}
 tibble(x = c("a,b,c", "d,e,f,g", "h,i,j")) %>% 
-  separate(x, c("one", "two", "three"), extra="merge")
+  separate(x, c("one", "two", "three"), extra = "merge")
 
 tibble(x = c("a,b,c", "d,e,f,g", "h,i,j")) %>% 
-  separate(x, c("one", "two", "three"), extra="drop")
+  separate(x, c("one", "two", "three"), extra = "drop")
 
 tibble(x = c("a,b,c", "d,e", "f,g,i")) %>% 
-  separate(x, c("one", "two", "three"), fill="left")
+  separate(x, c("one", "two", "three"), fill = "left")
 
 tibble(x = c("a,b,c", "d,e", "f,g,i")) %>% 
-  separate(x, c("one", "two", "three"), fill="right")
+  separate(x, c("one", "two", "three"), fill = "right")
 ```
 
 ### 2
 
-> Both unite() and separate() have a remove argument. What does it do? Why would you set it to FALSE?
+> Both ```unite()``` and ```separate()``` have a remove argument. What does it do? Why would you set it to ```FALSE```?
 
 It controls whether to keep the original column(s) that needed to be separted/united in the resulting data frame. Setting it to ```FALSE``` keeps them in. By default, it's set to ```TRUE```.
 
 ```{r}
 tibble(x = c("a,b,c", "d,e,f", "h,i,j")) %>% 
-  separate(x, c("one", "two", "three"), remove=FALSE)
-
+  separate(x, c("one", "two", "three"), remove = FALSE)
 ```
 
 ## 12.6.1
@@ -140,18 +139,17 @@ who1 <- who %>%
   separate(sexage, c("sex", "age"), sep = 1)
 
 who1
-
 ```
 
-> In this case study I set na.rm = TRUE just to make it easier to check that we had the correct values. Is this reasonable? Think about how missing values are represented in this dataset. Are there implicit missing values? What’s the difference between an NA and zero?
+> In this case study I set ```na.rm = TRUE``` just to make it easier to check that we had the correct values. Is this reasonable? Think about how missing values are represented in this dataset. Are there implicit missing values? What’s the difference between an NA and zero?
 
 I think this is reasonable: there are zeros to denote there were no new infections. NA just marked that the number of cases are unknown. So we have changed the data set from explicit to implicit missing values
 
 ### 2
 
-> What happens if you neglect the mutate() step? (mutate(key = stringr::str_replace(key, "newrel", "new_rel")))
+> What happens if you neglect the ```mutate()``` step? (```mutate(key = stringr::str_replace(key, "newrel", "new_rel"))```)
 
-The separate steps will fail, because there is no underscore between new and rel anymore. So some cases will be missing because of too few values, but we'll get a warning like this:
+The separate steps will fail, because there is no underscore between ```new``` and ```rel``` anymore. So some cases will be missing because of too few values, but we'll get a warning like this:
 
 ```{r}
 who %>% 
@@ -163,9 +161,9 @@ who %>%
 
 ### 3
 
-> I claimed that iso2 and iso3 were redundant with country. Confirm this claim.
+> I claimed that ```iso2``` and ```iso3``` were redundant with country. Confirm this claim.
 
-Using ```count``` we can see the number of occurences of unique combinations of coutnry, iso2, and iso3. We can see that no country, iso2, or iso3 is shown in more than one combination.
+Using ```count``` we can see the number of occurences of unique combinations of ```country```, ```iso2```, and ```iso3```. We can see that no ```country```, ```iso2```, or ```iso3``` is shown in more than one combination.
 
 ```{r}
 who %>% 
@@ -176,17 +174,15 @@ who %>%
 who %>%
   group_by(country, iso2, iso3) %>%
   summarize(n())
-
 ```
 
 # 4
 
 > For each country, year, and sex compute the total number of cases of TB. Make an informative visualisation of the data.
 
-I use iso3 instead of country for grouping, because labels are more readable then in the plot. I use logarithmic scale for total_cases, such that the fill of the heatmap becomes more granular for smaller values. Otherwise the fill color provides almost no information due to extreme outliers.
+I use ```iso3``` instead of ```country``` for grouping, because labels are more readable then in the plot. I use logarithmic scale for ```total_cases```, such that the fill of the heatmap becomes more granular for smaller values. Otherwise the fill color provides almost no information due to extreme outliers.
 
 ```{r fig.height=12, fig.width=6}
-
 tb <- who %>% 
   gather(new_sp_m014:newrel_f65, key = "key", value = "cases", na.rm = TRUE) %>% 
   mutate(key = str_replace(key, "newrel", "new_rel")) %>%
@@ -196,9 +192,8 @@ tb <- who %>%
   summarize(total_cases = sum(cases))
 
 ggplot(tb, aes(year, iso3)) +
-  geom_tile(aes(fill=log(total_cases))) +
-  facet_wrap(~sex) +
+  geom_tile(aes(fill = log(total_cases))) +
+  facet_wrap(~ sex) +
   ylab("country") +
   theme_minimal()
-
 ```
