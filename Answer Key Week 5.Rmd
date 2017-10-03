@@ -60,7 +60,7 @@ Spread turns numbers into strings (text/chr) when they become variable names. Wh
 
 > Both ```spread()``` and ```gather()``` have a convert argument. What does it do?
 
-Setting ```convert = TRUE``` will solve the problem above: the years will automatically be converted back tl numbers with ```gather```.
+Setting ```convert = TRUE``` will solve the problem above: the years will automatically be converted back to numbers with ```gather```.
 
 ### 2
 
