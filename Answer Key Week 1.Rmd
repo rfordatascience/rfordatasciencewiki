@@ -11,7 +11,7 @@ Nothing, because there are no layers with geometric objects in the plot.
 
 ```{r}
 library(tidyverse)
-ggplot(data=mpg)
+ggplot(data = mpg)
 ```
 
 ### 3.2.4.2
@@ -52,7 +52,7 @@ ggplot(data = mpg) +
 
 ### 3.3.1.1
 
-Because ```color="blue"``` is inside the ```aes()``` clause, instead of outside of it. Because of that, R is trying to map some variable that doesn't exist from the data frame on the color aesthetic. This is the correct syntax for setting an aesthetic attribute to a fixed value:
+Because ```color = "blue"``` is inside the ```aes()``` clause, instead of outside of it. Because of that, R is trying to map some variable that doesn't exist from the data frame on the color aesthetic. This is the correct syntax for setting an aesthetic attribute to a fixed value:
 
 ```{r}
 
@@ -94,13 +94,13 @@ ggplot(data = mpg) +
 
 ### 3.3.1.5
 
-For shapes that have a border, like ```shape = 21```, ```stroke``` controls te width of the surrounding border. See the difference between the two plots below:
+For shapes that have a border, like ```shape = 21```, ```stroke``` controls the width of the surrounding border. See the difference between the two plots below:
 
 ```{r}
 ggplot(data = mpg) +
-  geom_point(aes(x = displ, y = hwy, color = trans), shape = 21, stroke=1)
+  geom_point(aes(x = displ, y = hwy, color = trans), shape = 21, stroke = 1)
 ggplot(data = mpg) +
-  geom_point(aes(x = displ, y = hwy, color = trans), shape = 21, stroke=2)
+  geom_point(aes(x = displ, y = hwy, color = trans), shape = 21, stroke = 2)
 ```
 
 ### 3.3.1.6
