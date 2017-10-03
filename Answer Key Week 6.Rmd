@@ -140,8 +140,8 @@ str_view(words, '^.......', match = TRUE)
 > Create regular expressions to find all words that:
 
 > - Start with a vowel.
-> - End with ed, but not with eed.
-> - End with ing or ise.
+> - End with "ed", but not with "eed".
+> - End with "ing" or "ise".
 
 I am using ```sample``` to take a random sample from the list of words for readability for some of the commands. 
 
@@ -188,7 +188,6 @@ Respectively:
 str_view(words, "^[^aeiuoy]{3}", match = TRUE)
 str_view(words, "[aeiuoy]{3,}", match = TRUE)
 str_view(sample_words, "([aeiuoy][^aeiuoy]){2,}")
-
 ```
 
 ## 14.3.5.1
