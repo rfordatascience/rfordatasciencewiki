@@ -53,7 +53,6 @@ See ```?between```. Yes, you can simplify some of the previous commands:
 library(nycflights13)
 
 filter(flights, between(month, 7, 9))
-
 ```
 
 ### 5.2.4.3
