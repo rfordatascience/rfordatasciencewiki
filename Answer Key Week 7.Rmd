@@ -11,14 +11,13 @@ library(stringr)
 
 ### 1
 
-> For each of the following challenges, try solving it by using both a single regular expression, and a combination of multiple str_detect() calls.
+> For each of the following challenges, try solving it by using both a single regular expression, and a combination of multiple ```str_detect()``` calls.
 
-> - Find all words that start or end with x.
-- Find all words that start with a vowel and end with a consonant.
-- Are there any words that contain at least one of each different vowel?
+> - Find all words that start or end with "x".
+> - Find all words that start with a vowel and end with a consonant.
+> - Are there any words that contain at least one of each different vowel?
 
 ```{r}
-
 df <- tibble(
   word = words,
   i = seq_along(words)
@@ -30,19 +29,15 @@ df %>%
 df %>% 
   filter(str_detect(word, "(^x)") | str_detect(word, "(x$)"))
   
-
 df %>%
   filter(str_detect(word, "^[aiouey].*[^aiouey]$"))
 
 df %>%
   filter(str_detect(word, "^[aiouey]") & str_detect(word, "[^aiouey]$"))
 
-
 # 3. Only solvable using multiple str_detects, the answer is no.
-
 df %>%
   filter(str_detect(word, "a") & str_detect(word, "e") & str_detect(word, "i") & str_detect(word, "u") & str_detect(word, "o"))
-
 ```
 
 ### 2
@@ -63,7 +58,6 @@ counting %>%
 
 counting %>%
   arrange(desc(vowels_prop))
-
 ```
 
 ## 14.4.3.1
@@ -73,7 +67,7 @@ counting %>%
 > From the Harvard sentences data, extract:
 
 > - The first word from each sentence.
-> - All words ending in ing.
+> - All words ending in "ing".
 
 ```{r}
 sentences %>%
@@ -83,7 +77,6 @@ sentences %>%
 sentences %>%
   str_extract("[A-Za-z]+ing") %>%
   head(10)
-
 ```
 
 ## 14.4.4.1 
@@ -117,7 +110,7 @@ writeLines(str_replace_all(somestring, "/", "\\\\"))
 
 ### 2
 
-> Implement a simple version of str_to_lower() using replace_all().
+> Implement a simple version of ```str_to_lower()``` using ```replace_all()```.
 
 ```{r}
 # sentences %>%
@@ -137,8 +130,8 @@ sentences %>%
 Those that have the same first as last letter, like yesterday, or window, but some other too.
 
 ```{r}
-tibble(word=words) %>%
-  mutate(switched=str_replace_all(word, "^(.)(.+)(.)$", "\\3\\2\\1")) %>%
+tibble(word = words) %>%
+  mutate(switched = str_replace_all(word, "^(.)(.+)(.)$", "\\3\\2\\1")) %>%
   filter(switched %in% word)
 ```
 
@@ -146,20 +139,19 @@ tibble(word=words) %>%
 
 ### 1
 
-> Split up a string like ```"apples, pears, and bananas"``` into individual components.
+> Split up a string like "apples, pears, and bananas" into individual components.
 
 ```{r}
 x <- c("apples, pears, and bananas")
 
 str_split(x, ",? ")
-
 ```
 
 ### 2 
 
-> Why is it better to split up by boundary("word") than " "?
+> Why is it better to split up by ```boundary("word")``` than " "?
 
-It leaves out non alphanumeric characters, like a period or a comma.
+It leaves out non-alphanumeric characters, like a period or a comma.
 
 
 ## 28.2.1
@@ -169,7 +161,7 @@ It leaves out non alphanumeric characters, like a period or a comma.
 > Create one plot on the fuel economy data with customised title, subtitle, caption, x, y, and colour labels.
 
 ```{r}
-ggplot(mpg, aes(x=displ, y=hwy, color=class)) +
+ggplot(mpg, aes(x = displ, y = hwy, color = class)) +
   geom_point() + 
   labs(
     x = "Engine size",
