@@ -60,10 +60,9 @@ mutate(flights_thin,
 ```
 
 ### 5.5.2.4
-> Find the 10 most delayed flights using a ranking function. How do you want to handle ties? Carefully read the documentation for min_rank(). 
+> Find the 10 most delayed flights using a ranking function. How do you want to handle ties? Carefully read the documentation for ```min_rank()```. 
 
 ```{r}
-
 flights_thin <- select(flights, carrier, flight, arr_delay) 
 flights_thin <- mutate(flights_thin, delay_rank = min_rank(desc(arr_delay)))
 flights_thin <- filter(flights_thin, delay_rank <= 10)
