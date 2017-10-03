@@ -101,7 +101,6 @@ ggplot(mpg, aes(displ, hwy)) +
 OR, alternatively, using two layers of points:
 
 ```{r}
-
 ggplot(mpg, aes(displ, hwy)) +
   geom_point(color = 'white', size = 5) +
   geom_point(aes(color = drv), size = 3)
