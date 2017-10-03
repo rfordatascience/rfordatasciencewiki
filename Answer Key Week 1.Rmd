@@ -61,8 +61,8 @@ ggplot(data = mpg) +
 
 ### 3.3.1.2
 
-Categorical: manufacturer, model, trans, drv, fl, class. 
-Continuous: displ, year, cyl, cty hwy
+Categorical: ```manufacturer, model, trans, drv, fl, class``` 
+Continuous: ```displ, year, cyl, cty, hwy```
 
 This can be seen from the output below based on the second header row, which displays the type of variable. All ```<chr>``` columns are character columns and are categorical. All ```<dbl>``` and ```<int>``` columns code for continuous variables (the abbreviation stand for numbers of double precision -- allowing decimal points -- and integer numbers -- allowing only numbers without decimal points).
 
