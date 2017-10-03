@@ -13,7 +13,7 @@ library(lm.beta) # For computing standardized regression weights
 
 ## 1
 
-> Perform a paired samples t-test on city and highway mileage (from the mpg data frame) twice: one time using the jmv package, and one time using R’s default t.test function. 
+> Perform a paired samples t-test on city and highway mileage (from the ```mpg``` data frame) twice: one time using the ```jmv``` package, and one time using R’s default ```t.test``` function. 
 
 See below.
 
@@ -25,32 +25,31 @@ See below.
 ```{r}
 ### Run test ###
 jmv_results <- jmv::ttestPS(
-    data=mpg,
-    pairs=list(
+    data = mpg,
+    pairs = list(
         list(
-            i1="cty",
-            i2="hwy")),
-    meanDiff=TRUE,
-    effectSize=TRUE,
-    ci=TRUE,
-    desc=TRUE)
+            i1 = "cty",
+            i2 = "hwy")),
+    meanDiff = TRUE,
+    effectSize = TRUE,
+    ci = TRUE,
+    desc = TRUE)
 
 ### Extract results ###
 jmvttest <- as_tibble(jmv_results$ttest)
 
 tstat <- round(jmvttest$`stat[stud]`, 2)
 df    <- jmvttest$`df[stud]`
-pval  <- frmtp(jmvttest$`p[stud]`, markup="markdown", digits=3, case="lower")
+pval  <- frmtp(jmvttest$`p[stud]`, markup = "markdown", digits = 3, case = "lower")
 d     <- round(jmvttest$`es[stud]`, 2)
 
 ### Extract descriptives ###
 jmvdesc <- jmv_results$desc %>%
   as_tibble() %>%
-  mutate_if(is.numeric, round, digits=2) # round everything that's numeric
+  mutate_if(is.numeric, round, digits = 2) # round everything that's numeric
 
-ctydesc <- jmvdesc %>% filter(name=='cty')
-hwydesc <- jmvdesc %>% filter(name=='hwy')
-
+ctydesc <- jmvdesc %>% filter(name == 'cty')
+hwydesc <- jmvdesc %>% filter(name == 'hwy')
 ```
 
 A paired t-test showed that highway mileage (*M* = `r hwydesc$m`, *SD* = `r hwydesc$sd`) is higher than city mileage (*M* = `r ctydesc$m`, *SD* = `r ctydesc$sd`), *t*(`r df`) = `r tstat`, `r pval`, *d* = `r d`.
@@ -60,14 +59,14 @@ A paired t-test showed that highway mileage (*M* = `r hwydesc$m`, *SD* = `r hwyd
 ```{r}
 
 ### Test ###
-rttest <- t.test(mpg$cty, mpg$hwy, paired=TRUE)
-cohend <- cohensD(mpg$cty, mpg$hwy, method='paired')
+rttest <- t.test(mpg$cty, mpg$hwy, paired = TRUE)
+cohend <- cohensD(mpg$cty, mpg$hwy, method = 'paired')
 
 ### Extract results ###
 rttest <- tidy(rttest)
 tstat <- round(rttest$statistic, 2)
 df    <- rttest$parameter
-pval  <- frmtp(rttest$p.value, markup="markdown", digits=3, case="lower")
+pval  <- frmtp(rttest$p.value, markup = "markdown", digits = 3, case = "lower")
 d     <- round(cohend, 2)
 
 ### Descriptives ###
@@ -75,55 +74,54 @@ rdesc <- mpg %>%
   summarize(
     cty_m = mean(cty), cty_sd = sd(cty), 
     hwy_m = mean(hwy), hwy_sd = sd(hwy)) %>%
-  mutate_if(is.numeric, round, digits=2)
+  mutate_if(is.numeric, round, digits = 2)
 ```
 
 A paired t-test showed that highway mileage (*M* = `r rdesc$hwy_m`, *SD* = `r rdesc$hwy_sd`) is higher than city mileage (*M* = `r rdesc$cty_m`, *SD* = `r rdesc$cty_sd`), *t*(`r df`) = `r tstat`, `r pval`, *d* = `r d`.
 
 ## 1.2
 
-> Discuss the pro’s and cons of each approach
+> Discuss the pros and cons of each approach.
 
 I find it more comfortable to directly write the code in R, never leaving it. Also, the t-test syntax is more readable in R. However, the differences are not so big at this point.
 
 ## 2.1
 
-> Perform a paired samples t-test on city and highway mileage (from the mpg data frame) for each class using one single pipe (hint: make use of tidy() and do()). Can you do the same thing with the jamovi approach efficiently? If the answer is no, discuss at least two reasons.
+> Perform a paired samples t-test on city and highway mileage (from the ```mpg``` data frame) for each class using one single pipe (hint: make use of ```tidy()``` and ```do()```). Can you do the same thing with the jamovi approach efficiently? If the answer is no, discuss at least two reasons.
 
 ```{r}
 results <- mpg %>%
   group_by(class) %>%
-  do(tidy(t.test(.$hwy, .$cty, paired=TRUE)))
+  do(tidy(t.test(.$hwy, .$cty, paired = TRUE)))
 
 results
 ```
 
 ## 2.2 & 2.3
 
-> Use the resulting tibble from the analysis in the previous question to create a bar graph displaying the estimated difference for each class (use the estimate column). Don’t forget
+> Use the resulting tibble from the analysis in the previous question to create a bar graph displaying the estimated difference for each class (use the ```estimate``` column). Don’t forget
 to add labels.
 
-> Add confidence intervals (using the conf.low and conf.high columns) as error bars to the
-bar graph (read the help on geom_errorbar for more information). 
+> Add confidence intervals (using the ```conf.low``` and ```conf.high``` columns) as error bars to the
+bar graph (read the help on ```geom_errorbar``` for more information). 
 
 
 ```{r}
 results %>%
   ggplot(aes(class, estimate)) +
-    geom_bar(stat="identity") +
-    geom_errorbar(aes(ymin=conf.low, ymax=conf.high), width=.2) +
+    geom_bar(stat = "identity") +
+    geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = .2) +
     labs(
       title = "Difference in mileage in cities and on highways for each car class",
       caption = "Error bars represent 95% confidence intervals",
       x = "Car class",
       y = "Difference in mileage") +
     theme_minimal()
-
 ```
 
 ## 2.4
 
-> Create an additional column in the tibble with Bonferroni corrected p values of the t-tests (i.e., multiply every p value with the total number of t-tests computed). Don’t forget to first cancel the grouping using ungroup() before mutating the new column if you plan to use n() as multiplier.
+> Create an additional column in the tibble with Bonferroni corrected p values of the t-tests (i.e., multiply every p value with the total number of t-tests computed). Don’t forget to first cancel the grouping using ```ungroup()``` before mutating the new column if you plan to use ```n()``` as multiplier.
 
 
 ```{r}
@@ -134,7 +132,7 @@ results %>%
 
 ## 3.1
 
-> Using the weather data set from the nycflights13 package, compare the average wind speed at JFK and Newark (EWR) airports with an independent samples t-test.
+> Using the weather data set from the ```nycflights13``` package, compare the average wind speed at JFK and Newark (EWR) airports with an independent samples t-test.
 
 ```{r}
 library(nycflights13)
@@ -142,7 +140,6 @@ library(nycflights13)
 weather %>%
   filter(origin %in% c('JFK', 'EWR')) %>% 
   t.test(wind_speed ~ origin, .)
-
 ```
 
 ## 3.2
@@ -154,7 +151,7 @@ standardised betas. What can you conclude? What are the three strongest predicto
 library(car)
 fit <- weather %>%
   inner_join(flights) %>%
-  lm(dep_delay ~ temp+dewp+humid+wind_speed+precip+pressure+visib, .) %>%
+  lm(dep_delay ~ temp + dewp + humid + wind_speed + precip + pressure + visib, .) %>%
   lm.beta()
 
 summary(fit)
@@ -174,13 +171,13 @@ fit <- weather %>%
     temp = temp - mean(temp), 
     dewp = dewp - mean(dewp),
     visib = visib - mean(visib)) %>%
-  lm(dep_delay ~ temp*dewp*visib, .) %>%
-  Anova(type=3) 
+  lm(dep_delay ~ temp * dewp * visib, .) %>%
+  Anova(type = 3) 
 
 fit
 ```
 
-There is one interaction between temperature and visibility and one between temperatuere and dewpoint.
+There is one interaction between temperature and visibility and one between temperature and dewpoint.
 
 ## 3.4
 
@@ -192,17 +189,16 @@ From the plots below you can see that the lower the visibility score, the more t
 forplot <- weather %>%
   inner_join(flights) %>%
   mutate(
-    temp_group=factor(ntile(temp, 5)),
-    visib_group=factor(ntile(visib, 5)))
-  
+    temp_group = factor(ntile(temp, 5)),
+    visib_group = factor(ntile(visib, 5)))
 
 ggplot(forplot, aes(visib, dep_delay)) +
-  geom_smooth(aes(color=temp_group), se=F)
+  geom_smooth(aes(color = temp_group), se = F)
   scale_color_brewer() +
   theme_dark()
 
 ggplot(forplot, aes(temp, dep_delay)) +
-  geom_smooth(aes(color=visib_group), se=F) +
+  geom_smooth(aes(color = visib_group), se = F) +
   scale_color_brewer() +
   theme_dark()
 ```
@@ -220,10 +216,10 @@ From the effect sizes (eta squared) below, you can see that the effect of destin
 
 ```{r}
 lm(arr_delay ~ origin + dest, flights) %>%
-  Anova(type=3)
+  Anova(type = 3)
 
 aov(arr_delay ~ origin + dest, flights) %>%
-  etaSquared(type=3)
+  etaSquared(type = 3)
 ```
 
 ## 3.6
@@ -241,4 +237,4 @@ flights_mutated <- flights %>%
   tidy() -> results)
 ```
 
-At Newark, the flight delays average `r round(results$estimate[1], 2)`. They are worse at JFK, where they are `r round(results$estimate[2], 2)` longer (`r frmtp(results$p.value[2], digits=3, markup='markdown', case='lower')`), but better at La Guardia, where they are `r round(results$estimate[3], 2)` shorter (`r frmtp(results$p.value[3], digits=3, markup='markdown', case='lower')`).
+At Newark, the flight delays average `r round(results$estimate[1], 2)`. They are worse at JFK, where they are `r round(results$estimate[2], 2)` longer (`r frmtp(results$p.value[2], digits = 3, markup = 'markdown', case = 'lower')`), but better at La Guardia, where they are `r round(results$estimate[3], 2)` shorter (`r frmtp(results$p.value[3], digits = 3, markup = 'markdown', case = 'lower')`).
