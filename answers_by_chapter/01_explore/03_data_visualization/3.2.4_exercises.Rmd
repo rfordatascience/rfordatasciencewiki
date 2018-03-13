@@ -1,0 +1,6 @@
+---
+title: "3.2.4 Exercises"
+author: "R4DS online learning community"
+date: "3/12/2018"
+output: github_document
+---
